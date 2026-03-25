@@ -13,6 +13,7 @@ import { TablePagination } from '@/components/TablePagination';
 export default function PaymentsPage() {
   const [payments, setPayments] = useState<any[]>([]);
   const [labours, setLabours] = useState<any[]>([]);
+  const [labourSearch, setLabourSearch] = useState('');
   const [selectedPayment, setSelectedPayment] = useState<any | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
@@ -178,6 +179,7 @@ export default function PaymentsPage() {
   const openCreate = () => {
     setFormMode('add');
     setSelectedPaymentForEdit(null);
+    setLabourSearch('');
     reset(getEmptyPaymentForm());
     setIsModalOpen(true);
   };
@@ -185,6 +187,8 @@ export default function PaymentsPage() {
   const openEdit = (p: any) => {
     setFormMode('edit');
     setSelectedPaymentForEdit(p);
+    const selectedLabour = labours.find((l: any) => String(l.id) === String(p.labourId));
+    setLabourSearch(selectedLabour?.fullName || '');
     reset({
       labourId: p.labourId,
       paymentType: p.paymentType,
@@ -208,6 +212,9 @@ export default function PaymentsPage() {
   }, [search, filters.labourId, filters.status, filters.from, filters.to]);
 
   const createPeriodStart = watch('periodStart');
+  const labourOptions = labours.filter((l: any) =>
+    l.fullName?.toLowerCase().includes(labourSearch.trim().toLowerCase()),
+  );
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-in slide-in-from-bottom-4 duration-500">
@@ -351,9 +358,16 @@ export default function PaymentsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">Select Labour</label>
+                  <input
+                    type="text"
+                    value={labourSearch}
+                    onChange={(e) => setLabourSearch(e.target.value)}
+                    placeholder="Search labour by name"
+                    className="w-full p-3 mb-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
+                  />
                   <select {...register('labourId', { required: 'Labour is required' })} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
                     <option value="">-- Select Labour --</option>
-                    {labours.map((l: any) => (
+                    {labourOptions.map((l: any) => (
                       <option key={l.id} value={l.id}>{l.fullName} (Wage: ₹{l.wageAmount}/{l.wageType.charAt(0)})</option>
                     ))}
                   </select>

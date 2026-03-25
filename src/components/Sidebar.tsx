@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
-import { Home, Users, CalendarCheck, CreditCard, LogOut, Menu, X, Building2, ShieldCheck, UserCog, BriefcaseBusiness } from 'lucide-react';
+import { Home, Users, CalendarCheck, CreditCard, LogOut, Menu, X, Building2, ShieldCheck, UserCog, BriefcaseBusiness, Hammer } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -27,7 +27,7 @@ export function Sidebar() {
   const links = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Users', href: '/users', icon: Users },
-    { name: 'Labours', href: '/labours', icon: Users },
+    { name: 'Labours', href: '/labours', icon: Hammer },
     { name: 'Projects', href: '/projects', icon: BriefcaseBusiness },
     { name: 'Attendance', href: '/attendance', icon: CalendarCheck },
     { name: 'Payments', href: '/payments', icon: CreditCard },

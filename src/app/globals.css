@@ -42,3 +42,21 @@
     will-change: transform;
   }
 }
+
+@layer base {
+  button,
+  [type='button'],
+  [type='submit'],
+  [type='reset'],
+  select {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [type='button']:disabled,
+  [type='submit']:disabled,
+  [type='reset']:disabled,
+  select:disabled {
+    cursor: not-allowed;
+  }
+}
