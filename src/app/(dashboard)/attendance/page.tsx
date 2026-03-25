@@ -9,10 +9,11 @@ import { ConfirmModal } from '@/components/ConfirmModal';
 import { TablePagination } from '@/components/TablePagination';
 
 export default function AttendancePage() {
+  const today = format(new Date(), 'yyyy-MM-dd');
   const [labours, setLabours] = useState([]);
   const [users, setUsers] = useState<any[]>([]);
   const [attendanceRows, setAttendanceRows] = useState<any[]>([]);
-  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [date, setDate] = useState(today);
   const [overtimeHours, setOvertimeHours] = useState('0');
   const [remarks, setRemarks] = useState('');
   const [selectedLabourId, setSelectedLabourId] = useState('');
@@ -47,6 +48,10 @@ export default function AttendancePage() {
 
   const markAttendance = async (labourId: number, status: string) => {
     try {
+      if (date > today) {
+        toast.error('Cannot mark attendance for future dates');
+        return;
+      }
       setLoading(true);
       await apiClient.post(apiClient.URLS.attendance, {
         labourId,
@@ -81,6 +86,10 @@ export default function AttendancePage() {
   const updateAttendance = async (payload: any) => {
     if (!editingRow?.id) return;
     try {
+      if (String(payload.date).slice(0, 10) > today) {
+        toast.error('Cannot update attendance to a future date');
+        return;
+      }
       await apiClient.patch(`${apiClient.URLS.attendance}/${editingRow.id}`, {
         ...payload,
         labourId: Number(payload.labourId),
@@ -136,8 +145,13 @@ export default function AttendancePage() {
           <input 
             type="date" 
             value={date} 
+            max={today}
             onChange={e => {
               const nextDate = e.target.value;
+              if (nextDate > today) {
+                toast.error('Future date is not allowed');
+                return;
+              }
               setDate(nextDate);
               fetchAttendance(selectedLabourId || undefined, nextDate);
             }}
@@ -147,13 +161,22 @@ export default function AttendancePage() {
             <option value="">All Labours</option>
             {labours.map((l: any) => <option key={l.id} value={l.id}>{l.fullName}</option>)}
           </select>
-          <button onClick={() => { setDate(format(new Date(), 'yyyy-MM-dd')); setSelectedLabourId(''); setSearch(''); setStatusFilter(''); setOvertimeHours('0'); setRemarks(''); fetchAttendance(undefined, format(new Date(), 'yyyy-MM-dd')); }} className="w-full sm:w-auto px-3 py-2 rounded-lg border border-slate-200 text-sm">Clear Filters</button>
+          <button onClick={() => { setDate(today); setSelectedLabourId(''); setSearch(''); setStatusFilter(''); setOvertimeHours('0'); setRemarks(''); fetchAttendance(undefined, today); }} className="w-full sm:w-auto px-3 py-2 rounded-lg border border-slate-200 text-sm">Clear Filters</button>
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white border border-slate-200 rounded-xl p-4"><p className="text-xs text-slate-500 uppercase">Daily Records</p><p className="text-2xl font-bold">{dailyCount}</p></div>
-        <div className="bg-white border border-slate-200 rounded-xl p-4"><p className="text-xs text-slate-500 uppercase">Weekly Records</p><p className="text-2xl font-bold">{weeklyCount}</p></div>
-        <div className="bg-white border border-slate-200 rounded-xl p-4"><p className="text-xs text-slate-500 uppercase">Monthly Records</p><p className="text-2xl font-bold">{monthlyCount}</p></div>
+        <div className="bg-emerald-700 border border-emerald-800 rounded-xl p-4 shadow-md">
+          <p className="text-xs text-emerald-100 uppercase font-semibold">Daily Records</p>
+          <p className="text-2xl font-bold text-white">{dailyCount}</p>
+        </div>
+        <div className="bg-blue-700 border border-blue-800 rounded-xl p-4 shadow-md">
+          <p className="text-xs text-blue-100 uppercase font-semibold">Weekly Records</p>
+          <p className="text-2xl font-bold text-white">{weeklyCount}</p>
+        </div>
+        <div className="bg-violet-700 border border-violet-800 rounded-xl p-4 shadow-md">
+          <p className="text-xs text-violet-100 uppercase font-semibold">Monthly Records</p>
+          <p className="text-2xl font-bold text-white">{monthlyCount}</p>
+        </div>
       </div>
       <div className="bg-white border border-slate-200 rounded-xl p-4">
         <div className="flex flex-wrap gap-2 items-center mb-3">
@@ -350,6 +373,7 @@ export default function AttendancePage() {
 }
 
 function EditAttendanceModal({ row, onClose, onSave, labours }: { row: any; onClose: () => void; onSave: (payload: any) => void; labours: any[] }) {
+  const today = format(new Date(), 'yyyy-MM-dd');
   const [form, setForm] = useState({
     labourId: String(row.labourId),
     date: String(row.date).slice(0, 10),
@@ -364,7 +388,7 @@ function EditAttendanceModal({ row, onClose, onSave, labours }: { row: any; onCl
         <div className="p-5 border-b flex justify-between"><h3 className="font-bold">Edit Attendance</h3><button onClick={onClose}>✕</button></div>
         <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
           <div><label className="text-xs font-semibold text-slate-500">Labour</label><select value={form.labourId} onChange={(e) => setForm({ ...form, labourId: e.target.value })} className="w-full mt-1 p-2.5 border rounded-lg bg-white">{labours.map((l) => <option key={l.id} value={l.id}>{l.fullName}</option>)}</select></div>
-          <div><label className="text-xs font-semibold text-slate-500">Date</label><input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="w-full mt-1 p-2.5 border rounded-lg" /></div>
+          <div><label className="text-xs font-semibold text-slate-500">Date</label><input type="date" max={today} value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="w-full mt-1 p-2.5 border rounded-lg" /></div>
           <div><label className="text-xs font-semibold text-slate-500">Status</label><select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full mt-1 p-2.5 border rounded-lg bg-white"><option value="PRESENT">PRESENT</option><option value="ABSENT">ABSENT</option><option value="HALF_DAY">HALF_DAY</option><option value="OVERTIME">OVERTIME</option><option value="LEAVE">LEAVE</option></select></div>
           <div><label className="text-xs font-semibold text-slate-500">Overtime Hours</label><input value={form.overtimeHours} onChange={(e) => setForm({ ...form, overtimeHours: e.target.value })} type="number" step="0.5" className="w-full mt-1 p-2.5 border rounded-lg" /></div>
           <div className="md:col-span-2"><label className="text-xs font-semibold text-slate-500">Remarks</label><input value={form.remarks} onChange={(e) => setForm({ ...form, remarks: e.target.value })} placeholder="Remarks" className="w-full mt-1 p-2.5 border rounded-lg" /></div>
