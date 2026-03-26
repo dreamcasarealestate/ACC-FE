@@ -21,6 +21,7 @@ export default function AttendancePage() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [editingRow, setEditingRow] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
   const [tableLoading, setTableLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [recordSearch, setRecordSearch] = useState('');
@@ -88,6 +89,7 @@ export default function AttendancePage() {
   const updateAttendance = async (payload: any) => {
     if (!editingRow?.id) return;
     try {
+      setSavingEdit(true);
       if (String(payload.date).slice(0, 10) > today) {
         toast.error('Cannot update attendance to a future date');
         return;
@@ -102,6 +104,8 @@ export default function AttendancePage() {
       fetchAttendance(selectedLabourId || undefined, date);
     } catch (e: any) {
       toast.error(e.body?.message || 'Failed to update attendance');
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -400,7 +404,7 @@ export default function AttendancePage() {
         itemLabel="attendance records"
       />
       {editingRow && (
-        <EditAttendanceModal row={editingRow} onClose={() => setEditingRow(null)} onSave={updateAttendance} labours={labours} />
+        <EditAttendanceModal row={editingRow} onClose={() => setEditingRow(null)} onSave={updateAttendance} labours={labours} saving={savingEdit} />
       )}
       <ConfirmModal
         open={deleteId !== null}
@@ -414,7 +418,7 @@ export default function AttendancePage() {
   );
 }
 
-function EditAttendanceModal({ row, onClose, onSave, labours }: { row: any; onClose: () => void; onSave: (payload: any) => void; labours: any[] }) {
+function EditAttendanceModal({ row, onClose, onSave, labours, saving }: { row: any; onClose: () => void; onSave: (payload: any) => void; labours: any[]; saving: boolean }) {
   const today = format(new Date(), 'yyyy-MM-dd');
   const [form, setForm] = useState({
     labourId: String(row.labourId),
@@ -437,7 +441,7 @@ function EditAttendanceModal({ row, onClose, onSave, labours }: { row: any; onCl
         </div>
         <div className="p-5 border-t flex justify-end gap-2">
           <button onClick={onClose} className="px-4 py-2 rounded-lg font-semibold text-slate-700 border border-slate-300/90 bg-gradient-to-b from-white to-slate-50 hover:from-slate-50 hover:to-slate-100 shadow-sm hover:shadow-md transition-all">Cancel</button>
-          <button onClick={() => onSave(form)} className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Save</button>
+          <button disabled={saving} onClick={() => onSave(form)} className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed">{saving ? 'Saving...' : 'Save'}</button>
         </div>
       </div>
     </div>

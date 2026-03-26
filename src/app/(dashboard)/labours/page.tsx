@@ -90,6 +90,7 @@ export default function LaboursPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [workTypeFilter, setWorkTypeFilter] = useState('');
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { register, handleSubmit, reset } = useForm<LabourForm>({
     defaultValues: { status: 'ACTIVE', wageType: 'DAILY', workType: 'Mason' },
@@ -112,6 +113,7 @@ export default function LaboursPage() {
 
   const submitLabour = async (data: LabourForm) => {
     try {
+      setSubmitting(true);
       const payload = {
         ...data,
         wageAmount: Number(data.wageAmount),
@@ -135,6 +137,8 @@ export default function LaboursPage() {
     } catch (e: unknown) {
       console.error(e);
       toast.error(getApiErrorMessage(e, 'Failed to save labour'));
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -414,8 +418,12 @@ export default function LaboursPage() {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="px-5 py-2.5 rounded-xl font-medium text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-all">
-                  {formMode === 'add' ? 'Save Labour' : 'Update Labour'}
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-5 py-2.5 rounded-xl font-medium text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {submitting ? 'Saving...' : formMode === 'add' ? 'Save Labour' : 'Update Labour'}
                 </button>
               </div>
             </form>

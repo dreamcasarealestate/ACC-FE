@@ -23,6 +23,7 @@ export default function PaymentsPage() {
   const [search, setSearch] = useState('');
   const [tablePage, setTablePage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const {
     register,
@@ -73,6 +74,7 @@ export default function PaymentsPage() {
 
   const submitPayment = async (data: any) => {
     try {
+      setSubmitting(true);
       data.labourId = Number(data.labourId);
       data.totalDaysPresent = Number(data.totalDaysPresent);
       data.totalHalfDays = Number(data.totalHalfDays);
@@ -108,6 +110,8 @@ export default function PaymentsPage() {
       await fetchData();
     } catch (e: any) {
       toast.error(e.body?.message || 'Error saving payment');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -480,13 +484,14 @@ export default function PaymentsPage() {
                 </button>
                 <button
                   type="submit"
+                  disabled={submitting}
                   className={`px-5 py-2.5 rounded-xl font-medium text-white transition-all flex items-center gap-2 ${
                     formMode === 'add'
                       ? 'bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-500/30'
                       : 'bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30'
-                  }`}
+                  } disabled:opacity-60 disabled:cursor-not-allowed`}
                 >
-                  <CheckCircle size={18}/> {formMode === 'add' ? 'Process Payment' : 'Update Payment'}
+                  <CheckCircle size={18}/> {submitting ? 'Saving...' : formMode === 'add' ? 'Process Payment' : 'Update Payment'}
                 </button>
               </div>
             </form>

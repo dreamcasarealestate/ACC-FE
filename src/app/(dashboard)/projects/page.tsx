@@ -26,6 +26,7 @@ export default function ProjectsPage() {
   const [townFilter, setTownFilter] = useState('');
   const [tablePage, setTablePage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
   const [selectedProject, setSelectedProject] = useState<any | null>(null);
@@ -59,6 +60,7 @@ export default function ProjectsPage() {
 
   const submitProject = async (data: ProjectForm) => {
     try {
+      setSubmitting(true);
       const payload = {
         ...data,
         labourIds: (data.labourIds || []).map(Number),
@@ -83,6 +85,8 @@ export default function ProjectsPage() {
       await fetchData();
     } catch (e: any) {
       toast.error(e.body?.message || 'Failed to save project');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -262,6 +266,7 @@ export default function ProjectsPage() {
           errors={errors}
           labours={labours}
           onSubmit={handleSubmit(submitProject)}
+          submitting={submitting}
           onClose={() => {
             setIsModalOpen(false);
             setSelectedProject(null);
@@ -291,7 +296,7 @@ export default function ProjectsPage() {
   );
 }
 
-function ProjectModal({ title, register, errors, labours, onSubmit, onClose, submitText }: any) {
+function ProjectModal({ title, register, errors, labours, onSubmit, onClose, submitText, submitting }: any) {
   const [labourSearch, setLabourSearch] = useState('');
   const [workTypeFilter, setWorkTypeFilter] = useState('');
   const [labourPage, setLabourPage] = useState(1);
@@ -381,7 +386,9 @@ function ProjectModal({ title, register, errors, labours, onSubmit, onClose, sub
           </div>
           <div className="pt-2 flex justify-end gap-2">
             <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg font-semibold text-slate-700 border border-slate-300/90 bg-gradient-to-b from-white to-slate-50 hover:from-slate-50 hover:to-slate-100 shadow-sm hover:shadow-md transition-all">Cancel</button>
-            <button type="submit" className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">{submitText}</button>
+            <button type="submit" disabled={submitting} className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed">
+              {submitting ? 'Saving...' : submitText}
+            </button>
           </div>
         </form>
       </div>
