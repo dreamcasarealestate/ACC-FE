@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { Plus, Edit, Trash2, Eye, Power, Search, RefreshCw } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { ConfirmModal } from '@/components/ConfirmModal';
+import { SectionLoader } from '@/components/SectionLoader';
 
 type LabourForm = {
   fullName: string;
@@ -54,6 +55,14 @@ const getWorkTypeBadgeClass = (workType: string) => {
       return 'bg-cyan-50 text-cyan-700 border-cyan-100';
     case 'painter':
       return 'bg-pink-50 text-pink-700 border-pink-100';
+    case 'plastering':
+      return 'bg-emerald-50 text-emerald-700 border-emerald-100';
+    case 'concrete work':
+      return 'bg-stone-100 text-stone-700 border-stone-200';
+    case 'shuttering':
+      return 'bg-lime-50 text-lime-700 border-lime-100';
+    case 'brick mason':
+      return 'bg-red-50 text-red-700 border-red-100';
     case 'steel worker':
       return 'bg-slate-100 text-slate-700 border-slate-200';
     case 'tile worker':
@@ -221,7 +230,7 @@ export default function LaboursPage() {
         </select>
         <select value={workTypeFilter} onChange={(e) => setWorkTypeFilter(e.target.value)} className="px-3 py-2.5 border border-slate-200 rounded-lg bg-white">
           <option value="">All Work Types</option>
-          <option value="Mason">Mason</option><option value="Helper">Helper</option><option value="Carpenter">Carpenter</option><option value="Electrician">Electrician</option><option value="Plumber">Plumber</option><option value="Painter">Painter</option><option value="Steel worker">Steel worker</option><option value="Tile worker">Tile worker</option><option value="Other">Other</option>
+          <option value="Mason">Mason</option><option value="Helper">Helper</option><option value="Carpenter">Carpenter</option><option value="Electrician">Electrician</option><option value="Plumber">Plumber</option><option value="Painter">Painter</option><option value="Plastering">Plastering</option><option value="Concrete Work">Concrete Work</option><option value="Shuttering">Shuttering</option><option value="Brick Mason">Brick Mason</option><option value="Steel worker">Steel worker</option><option value="Tile worker">Tile worker</option><option value="Other">Other</option>
         </select>
         <button onClick={clearFilters} className="px-3 py-2.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-sm">Clear Filters</button>
         <button onClick={fetchLabours} className="px-3 py-2.5 rounded-lg bg-slate-900 text-white text-sm inline-flex items-center gap-1"><RefreshCw size={14}/>Refresh</button>
@@ -286,7 +295,11 @@ export default function LaboursPage() {
                 </tr>
               ))}
               {loading && (
-                <tr><td colSpan={7} className="px-6 py-12 text-center text-slate-400">Loading labours...</td></tr>
+                <tr>
+                  <td colSpan={7} className="px-6">
+                    <SectionLoader label="Loading labour records..." />
+                  </td>
+                </tr>
               )}
               {!loading && filteredLabours.length === 0 && (
                 <tr>
@@ -337,12 +350,17 @@ export default function LaboursPage() {
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">Work Type</label>
                   <select {...register('workType', { required: true })} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm bg-white">
+                    <option value="" disabled>Select work type</option>
                     <option value="Mason">Mason</option>
                     <option value="Helper">Helper</option>
                     <option value="Carpenter">Carpenter</option>
                     <option value="Electrician">Electrician</option>
                     <option value="Plumber">Plumber</option>
                     <option value="Painter">Painter</option>
+                    <option value="Plastering">Plastering</option>
+                    <option value="Concrete Work">Concrete Work</option>
+                    <option value="Shuttering">Shuttering</option>
+                    <option value="Brick Mason">Brick Mason</option>
                     <option value="Steel worker">Steel worker</option>
                     <option value="Tile worker">Tile worker</option>
                     <option value="Other">Other</option>
@@ -351,6 +369,7 @@ export default function LaboursPage() {
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">Wage Type</label>
                   <select {...register('wageType', { required: true })} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm bg-white">
+                    <option value="" disabled>Select wage type</option>
                     <option value="DAILY">Daily</option>
                     <option value="WEEKLY">Weekly</option>
                     <option value="MONTHLY">Monthly</option>
@@ -367,6 +386,7 @@ export default function LaboursPage() {
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">Status</label>
                   <select {...register('status')} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm bg-white">
+                    <option value="" disabled>Select status</option>
                     <option value="ACTIVE">ACTIVE</option>
                     <option value="INACTIVE">INACTIVE</option>
                   </select>
@@ -390,7 +410,7 @@ export default function LaboursPage() {
                     setSelectedLabourForEdit(null);
                     reset({ status: 'ACTIVE', wageType: 'DAILY', workType: 'Mason' });
                   }}
-                  className="px-5 py-2.5 rounded-xl font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+                  className="px-5 py-2.5 rounded-xl font-semibold text-slate-700 border border-slate-300/90 bg-gradient-to-b from-white to-slate-50 hover:from-slate-50 hover:to-slate-100 shadow-sm hover:shadow-md transition-all"
                 >
                   Cancel
                 </button>
@@ -436,7 +456,7 @@ export default function LaboursPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedLabour(null)}
-                  className="px-5 py-2.5 rounded-xl font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+                  className="px-5 py-2.5 rounded-xl font-semibold text-slate-700 border border-slate-300/90 bg-gradient-to-b from-white to-slate-50 hover:from-slate-50 hover:to-slate-100 shadow-sm hover:shadow-md transition-all"
                 >
                   Close
                 </button>

@@ -9,11 +9,12 @@ import { useForm } from 'react-hook-form';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import { useAuth } from '@/context/AuthContext';
 import { TablePagination } from '@/components/TablePagination';
+import { SingleSelect } from '@/components/ui/form/SingleSelect';
+import { SectionLoader } from '@/components/SectionLoader';
 
 export default function PaymentsPage() {
   const [payments, setPayments] = useState<any[]>([]);
   const [labours, setLabours] = useState<any[]>([]);
-  const [labourSearch, setLabourSearch] = useState('');
   const [selectedPayment, setSelectedPayment] = useState<any | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
@@ -179,7 +180,6 @@ export default function PaymentsPage() {
   const openCreate = () => {
     setFormMode('add');
     setSelectedPaymentForEdit(null);
-    setLabourSearch('');
     reset(getEmptyPaymentForm());
     setIsModalOpen(true);
   };
@@ -187,8 +187,6 @@ export default function PaymentsPage() {
   const openEdit = (p: any) => {
     setFormMode('edit');
     setSelectedPaymentForEdit(p);
-    const selectedLabour = labours.find((l: any) => String(l.id) === String(p.labourId));
-    setLabourSearch(selectedLabour?.fullName || '');
     reset({
       labourId: p.labourId,
       paymentType: p.paymentType,
@@ -212,9 +210,11 @@ export default function PaymentsPage() {
   }, [search, filters.labourId, filters.status, filters.from, filters.to]);
 
   const createPeriodStart = watch('periodStart');
-  const labourOptions = labours.filter((l: any) =>
-    l.fullName?.toLowerCase().includes(labourSearch.trim().toLowerCase()),
-  );
+  const labourIdValue = String(watch('labourId') || '');
+  const labourOptions = labours.map((l: any) => ({
+    label: `${l.fullName} (Wage: Rs.${l.wageAmount}/${String(l.wageType || '').charAt(0)})`,
+    value: String(l.id),
+  }));
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-in slide-in-from-bottom-4 duration-500">
@@ -312,7 +312,11 @@ export default function PaymentsPage() {
                 </tr>
               ))}
               {loading && (
-                <tr><td colSpan={7} className="px-6 py-12 text-center text-slate-400">Loading payment records...</td></tr>
+                <tr>
+                  <td colSpan={7} className="px-6">
+                    <SectionLoader label="Loading payment records..." />
+                  </td>
+                </tr>
               )}
               {!loading && filteredPayments.length === 0 && (
                 <tr>
@@ -358,19 +362,17 @@ export default function PaymentsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">Select Labour</label>
-                  <input
-                    type="text"
-                    value={labourSearch}
-                    onChange={(e) => setLabourSearch(e.target.value)}
-                    placeholder="Search labour by name"
-                    className="w-full p-3 mb-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
+                  <input type="hidden" {...register('labourId', { required: 'Labour is required' })} />
+                  <SingleSelect
+                    value={labourIdValue}
+                    onChange={(v) => setValue('labourId', v, { shouldValidate: true, shouldDirty: true })}
+                    options={labourOptions}
+                    placeholder="Select labour"
+                    searchable
+                    searchPlaceholder="Search labour by name"
+                    noResultsText="No matching labour found"
+                    error={!!errors.labourId}
                   />
-                  <select {...register('labourId', { required: 'Labour is required' })} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
-                    <option value="">-- Select Labour --</option>
-                    {labourOptions.map((l: any) => (
-                      <option key={l.id} value={l.id}>{l.fullName} (Wage: ₹{l.wageAmount}/{l.wageType.charAt(0)})</option>
-                    ))}
-                  </select>
                   {errors.labourId && <p className="text-xs text-rose-600 mt-1">{String(errors.labourId.message)}</p>}
                 </div>
                 <div className="md:col-span-2">
@@ -383,6 +385,7 @@ export default function PaymentsPage() {
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">Payment Cycle</label>
                   <select {...register('paymentType', { required: 'Payment cycle is required' })} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
+                    <option value="" disabled>Select payment cycle</option>
                     <option value="WEEKLY">Weekly</option>
                     <option value="MONTHLY">Monthly</option>
                   </select>
@@ -449,6 +452,7 @@ export default function PaymentsPage() {
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">Status</label>
                   <select {...register('status')} className="w-full p-3 border border-slate-200 rounded-xl outline-none bg-white">
+                    <option value="" disabled>Select status</option>
                     <option value="PENDING">PENDING</option>
                     <option value="PARTIAL">PARTIAL</option>
                     <option value="SETTLED">SETTLED</option>
@@ -470,7 +474,7 @@ export default function PaymentsPage() {
                     setSelectedPaymentForEdit(null);
                     reset(getEmptyPaymentForm());
                   }}
-                  className="px-5 py-2.5 rounded-xl font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+                  className="px-5 py-2.5 rounded-xl font-semibold text-slate-700 border border-slate-300/90 bg-gradient-to-b from-white to-slate-50 hover:from-slate-50 hover:to-slate-100 shadow-sm hover:shadow-md transition-all"
                 >
                   Cancel
                 </button>

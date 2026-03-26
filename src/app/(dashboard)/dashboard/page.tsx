@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import apiClient from '@/lib/api';
 import { Users, UserX, UserCheck, Activity, CalendarDays, CalendarRange, RefreshCw } from 'lucide-react';
 import { format, subDays } from 'date-fns';
+import { SectionLoader } from '@/components/SectionLoader';
 
 export default function DashboardPage() {
   const [summary, setSummary] = useState<any>(null);
@@ -75,7 +76,7 @@ export default function DashboardPage() {
     loadSummary(date);
   }, []);
 
-  if (loading && !summary) return <div className="flex h-full items-center justify-center min-h-[50vh]"><Activity className="animate-spin text-blue-500" size={32}/></div>;
+  if (loading && !summary) return <div className="min-h-[50vh]"><SectionLoader label="Loading dashboard insights..." /></div>;
   if (!summary) {
     return (
       <div className="max-w-6xl mx-auto py-20">
