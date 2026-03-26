@@ -35,9 +35,14 @@ export default function LoginPage() {
       login(response.data.access_token, response.data.user);
       router.push('/dashboard');
     } catch (err: any) {
-      const errorMsg = err.response?.data?.message || 'Failed to login';
+      const backendMessage = err?.body?.message || err?.response?.data?.message;
+      const errorMsg =
+        backendMessage === 'Invalid credentials'
+          ? 'Invalid email or password'
+          : backendMessage || 'Invalid email or password';
       setError(errorMsg);
       toast.error(errorMsg);
+    } finally {
       setLoading(false);
     }
   };
