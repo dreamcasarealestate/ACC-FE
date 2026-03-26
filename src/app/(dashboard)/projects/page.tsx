@@ -7,6 +7,7 @@ import { Plus, Edit, Trash2, Search, Building2, Users2 } from 'lucide-react';
 import apiClient from '@/lib/api';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import { TablePagination } from '@/components/TablePagination';
+import { SectionLoader } from '@/components/SectionLoader';
 
 type ProjectForm = {
   projectName: string;
@@ -237,7 +238,11 @@ export default function ProjectsPage() {
                 </tr>
               ))}
               {loading && (
-                <tr><td colSpan={7} className="px-5 py-10 text-center text-slate-400">Loading projects...</td></tr>
+                <tr>
+                  <td colSpan={7} className="px-5">
+                    <SectionLoader label="Loading projects..." />
+                  </td>
+                </tr>
               )}
               {!loading && filteredProjects.length === 0 && (
                 <tr>
@@ -315,22 +320,22 @@ function ProjectModal({ title, register, errors, labours, onSubmit, onClose, sub
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-semibold text-slate-700">Project Name</label>
-              <input {...register('projectName', { required: 'Project name is required' })} className="w-full mt-1 p-2.5 border rounded-lg" />
+              <input {...register('projectName', { required: 'Project name is required' })} placeholder="e.g. Green Valley Residency" className="w-full mt-1 p-2.5 border rounded-lg" />
               {errors.projectName && <p className="text-xs text-rose-600 mt-1">{errors.projectName.message}</p>}
             </div>
             <div>
               <label className="text-sm font-semibold text-slate-700">Town</label>
-              <input {...register('town', { required: 'Town is required' })} className="w-full mt-1 p-2.5 border rounded-lg" />
+              <input {...register('town', { required: 'Town is required' })} placeholder="e.g. Warangal" className="w-full mt-1 p-2.5 border rounded-lg" />
               {errors.town && <p className="text-xs text-rose-600 mt-1">{errors.town.message}</p>}
             </div>
             <div>
               <label className="text-sm font-semibold text-slate-700">Owner Name</label>
-              <input {...register('ownerName', { required: 'Owner name is required' })} className="w-full mt-1 p-2.5 border rounded-lg" />
+              <input {...register('ownerName', { required: 'Owner name is required' })} placeholder="e.g. Ravi Kumar" className="w-full mt-1 p-2.5 border rounded-lg" />
               {errors.ownerName && <p className="text-xs text-rose-600 mt-1">{errors.ownerName.message}</p>}
             </div>
             <div>
               <label className="text-sm font-semibold text-slate-700">Owner Contact Number</label>
-              <input {...register('ownerContact', { required: 'Owner contact is required', pattern: { value: /^[0-9+\-\s]{8,15}$/, message: 'Enter valid contact number' } })} className="w-full mt-1 p-2.5 border rounded-lg" />
+              <input {...register('ownerContact', { required: 'Owner contact is required', pattern: { value: /^[0-9+\-\s]{8,15}$/, message: 'Enter valid contact number' } })} placeholder="+91 9876543210" className="w-full mt-1 p-2.5 border rounded-lg" />
               {errors.ownerContact && <p className="text-xs text-rose-600 mt-1">{errors.ownerContact.message}</p>}
             </div>
             <div className="md:col-span-2">
@@ -340,7 +345,7 @@ function ProjectModal({ title, register, errors, labours, onSubmit, onClose, sub
             </div>
             <div className="md:col-span-2">
               <label className="text-sm font-semibold text-slate-700">Description</label>
-              <textarea {...register('description')} rows={2} className="w-full mt-1 p-2.5 border rounded-lg" />
+              <textarea {...register('description')} rows={2} className="w-full mt-1 p-2.5 border rounded-lg" placeholder="Project notes (optional)" />
             </div>
             <div className="md:col-span-2">
               <label className="text-sm font-semibold text-slate-700">Onboard Labours</label>
@@ -375,7 +380,7 @@ function ProjectModal({ title, register, errors, labours, onSubmit, onClose, sub
             </div>
           </div>
           <div className="pt-2 flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100">Cancel</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg font-semibold text-slate-700 border border-slate-300/90 bg-gradient-to-b from-white to-slate-50 hover:from-slate-50 hover:to-slate-100 shadow-sm hover:shadow-md transition-all">Cancel</button>
             <button type="submit" className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">{submitText}</button>
           </div>
         </form>
@@ -387,6 +392,7 @@ function ProjectModal({ title, register, errors, labours, onSubmit, onClose, sub
 function ProjectLaboursModal({ projectName, labours, onClose }: { projectName: string; labours: any[]; onClose: () => void }) {
   const [search, setSearch] = useState('');
   const [workTypeFilter, setWorkTypeFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
@@ -394,14 +400,15 @@ function ProjectLaboursModal({ projectName, labours, onClose }: { projectName: s
     const q = search.trim().toLowerCase();
     const searchMatch = !q || l.fullName?.toLowerCase().includes(q) || l.phone?.toLowerCase().includes(q);
     const typeMatch = !workTypeFilter || l.workType === workTypeFilter;
-    return searchMatch && typeMatch;
+    const statusMatch = !statusFilter || l.status === statusFilter;
+    return searchMatch && typeMatch && statusMatch;
   });
   const paginatedLabours = filteredLabours.slice((page - 1) * pageSize, page * pageSize);
   const workTypes = Array.from(new Set((labours || []).map((l) => l.workType).filter(Boolean)));
 
   useEffect(() => {
     setPage(1);
-  }, [search, workTypeFilter]);
+  }, [search, workTypeFilter, statusFilter]);
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -438,7 +445,7 @@ function ProjectLaboursModal({ projectName, labours, onClose }: { projectName: s
               <p className="text-xl font-bold text-rose-800">{labours.filter((l) => l.status === 'INACTIVE').length}</p>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -448,6 +455,11 @@ function ProjectLaboursModal({ projectName, labours, onClose }: { projectName: s
             <select value={workTypeFilter} onChange={(e) => setWorkTypeFilter(e.target.value)} className="p-2.5 border rounded-lg bg-white">
               <option value="">All Work Types</option>
               {workTypes.map((wt) => <option key={wt} value={wt}>{wt}</option>)}
+            </select>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="p-2.5 border rounded-lg bg-white">
+              <option value="">All Status</option>
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="INACTIVE">INACTIVE</option>
             </select>
           </div>
           <div className="border rounded-xl overflow-hidden">

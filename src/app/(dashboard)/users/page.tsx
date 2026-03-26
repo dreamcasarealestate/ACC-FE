@@ -7,6 +7,7 @@ import { Plus, Trash2, UserCog, Edit, Search, RefreshCw, Eye, EyeOff } from 'luc
 import apiClient from '@/lib/api';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import { TablePagination } from '@/components/TablePagination';
+import { SectionLoader } from '@/components/SectionLoader';
 
 type UserForm = {
   name: string;
@@ -198,7 +199,11 @@ export default function UsersPage() {
               </tr>
             ))}
             {loading && (
-              <tr><td className="px-5 py-10 text-center text-slate-400" colSpan={5}>Loading users...</td></tr>
+              <tr>
+                <td className="px-5" colSpan={5}>
+                  <SectionLoader label="Loading users..." />
+                </td>
+              </tr>
             )}
             {!loading && filteredUsers.length === 0 && (
               <tr>
@@ -240,22 +245,23 @@ export default function UsersPage() {
             <form onSubmit={handleSubmit(submitUser)} className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label className="text-sm font-semibold text-slate-700">Name</label>
-                <input {...register('name', { required: 'Name is required', minLength: { value: 2, message: 'Name should be at least 2 characters' } })} className="w-full mt-1 p-2.5 border rounded-lg" />
+                <input {...register('name', { required: 'Name is required', minLength: { value: 2, message: 'Name should be at least 2 characters' } })} placeholder="e.g. kiran" className="w-full mt-1 p-2.5 border rounded-lg" />
                 {errors.name && <p className="text-xs text-rose-600 mt-1">{errors.name.message}</p>}
               </div>
               <div className="md:col-span-2">
                 <label className="text-sm font-semibold text-slate-700">Email</label>
-                <input type="email" {...register('email', { required: 'Email is required', pattern: { value: /^\S+@\S+\.\S+$/, message: 'Enter a valid email address' } })} className="w-full mt-1 p-2.5 border rounded-lg" />
+                <input type="email" {...register('email', { required: 'Email is required', pattern: { value: /^\S+@\S+\.\S+$/, message: 'Enter a valid email address' } })} placeholder="name@example.com" className="w-full mt-1 p-2.5 border rounded-lg" />
                 {errors.email && <p className="text-xs text-rose-600 mt-1">{errors.email.message}</p>}
               </div>
               <div>
                 <label className="text-sm font-semibold text-slate-700">Phone</label>
-                <input {...register('phone', { required: 'Phone is required', pattern: { value: /^[0-9+\-\s]{8,15}$/, message: 'Enter a valid phone number' } })} className="w-full mt-1 p-2.5 border rounded-lg" />
+                <input {...register('phone', { required: 'Phone is required', pattern: { value: /^[0-9+\-\s]{8,15}$/, message: 'Enter a valid phone number' } })} placeholder="+91 9876543210" className="w-full mt-1 p-2.5 border rounded-lg" />
                 {errors.phone && <p className="text-xs text-rose-600 mt-1">{errors.phone.message}</p>}
               </div>
               <div>
                 <label className="text-sm font-semibold text-slate-700">Role</label>
                 <select {...register('role')} className="w-full mt-1 p-2.5 border rounded-lg bg-white">
+                  <option value="" disabled>Select role</option>
                   <option value="SUPERVISOR">SUPERVISOR</option>
                   <option value="ADMIN">ADMIN</option>
                 </select>
@@ -271,6 +277,7 @@ export default function UsersPage() {
                       ? { required: 'Password is required', minLength: { value: 4, message: 'Password should be at least 4 characters' } }
                       : { minLength: { value: 4, message: 'Password should be at least 4 characters' } })}
                     className="w-full p-2.5 pr-10 border rounded-lg"
+                    placeholder={formMode === 'add' ? 'Enter password' : 'Leave empty to keep existing password'}
                   />
                   <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute inset-y-0 right-2 text-slate-500 hover:text-slate-700">
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -288,7 +295,7 @@ export default function UsersPage() {
                     setShowPassword(false);
                     reset({ role: 'SUPERVISOR' });
                   }}
-                  className="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100"
+                  className="px-4 py-2 rounded-lg font-semibold text-slate-700 border border-slate-300/90 bg-gradient-to-b from-white to-slate-50 hover:from-slate-50 hover:to-slate-100 shadow-sm hover:shadow-md transition-all"
                 >
                   Cancel
                 </button>

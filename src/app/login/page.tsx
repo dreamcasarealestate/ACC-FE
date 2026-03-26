@@ -15,9 +15,16 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showForgotConfirmPassword, setShowForgotConfirmPassword] = useState(false);
   const [showForgotView, setShowForgotView] = useState(false);
-  const { register, handleSubmit } = useForm();
-  const { register: registerForgot, handleSubmit: handleSubmitForgot, reset: resetForgot } = useForm();
+  const { register, handleSubmit, setValue } = useForm();
+  const {
+    register: registerForgot,
+    handleSubmit: handleSubmitForgot,
+    reset: resetForgot,
+    formState: { errors: forgotErrors },
+  } = useForm();
 
   const onSubmit = async (data: any) => {
     try {
@@ -36,12 +43,25 @@ export default function LoginPage() {
   };
 
   const onSubmitForgot = async (data: any) => {
+    if (!data?.newPassword || String(data.newPassword).length < 6) {
+      toast.error('New password must be at least 6 characters');
+      return;
+    }
+    if (data.newPassword !== data.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
     try {
       setLoading(true);
       setError('');
-      const res = await apiClient.post(apiClient.URLS.authForgotPassword, data, false);
-      toast.success(res.data?.message || 'Reset link sent to your email');
+      const res = await apiClient.post(
+        apiClient.URLS.authForgotPassword,
+        { email: data.email, newPassword: data.newPassword },
+        false,
+      );
+      toast.success(res.data?.message || 'Password updated successfully');
       resetForgot();
+      setValue('email', String(data.email || ''));
       setShowForgotView(false);
     } catch (err: any) {
       const errorMsg = err.body?.message || 'Failed to request password reset';
@@ -150,25 +170,64 @@ export default function LoginPage() {
             </button>
           </form>
         ) : (
-          <form onSubmit={handleSubmitForgot(onSubmitForgot)} className="space-y-6">
+          <form onSubmit={handleSubmitForgot(onSubmitForgot)} className="space-y-4">
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <Mail className="h-5 w-5 text-slate-400 group-focus-within:text-blue-400 transition-colors" />
               </div>
               <input
-                {...registerForgot('email', { required: true })}
+                {...registerForgot('email', { required: 'Email is required' })}
                 type="email"
                 className="w-full pl-11 pr-4 py-4 bg-slate-900/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-white placeholder-slate-500 transition-all outline-none shadow-inner"
                 placeholder="Enter your account email"
               />
             </div>
+            {forgotErrors.email && <p className="text-xs text-rose-400">{String(forgotErrors.email.message)}</p>}
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <Lock className="h-5 w-5 text-slate-400 group-focus-within:text-blue-400 transition-colors" />
+              </div>
+              <input
+                {...registerForgot('newPassword', { required: 'Password is required' })}
+                type={showForgotPassword ? 'text' : 'password'}
+                className="w-full pl-11 pr-12 py-4 bg-slate-900/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-white placeholder-slate-500 transition-all outline-none shadow-inner"
+                placeholder="New password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword((v) => !v)}
+                className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-blue-300 transition-colors"
+              >
+                {showForgotPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </div>
+            {forgotErrors.newPassword && <p className="text-xs text-rose-400">{String(forgotErrors.newPassword.message)}</p>}
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <Lock className="h-5 w-5 text-slate-400 group-focus-within:text-blue-400 transition-colors" />
+              </div>
+              <input
+                {...registerForgot('confirmPassword', { required: 'Confirm password is required' })}
+                type={showForgotConfirmPassword ? 'text' : 'password'}
+                className="w-full pl-11 pr-12 py-4 bg-slate-900/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 text-white placeholder-slate-500 transition-all outline-none shadow-inner"
+                placeholder="Confirm new password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowForgotConfirmPassword((v) => !v)}
+                className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-blue-300 transition-colors"
+              >
+                {showForgotConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </div>
+            {forgotErrors.confirmPassword && <p className="text-xs text-rose-400">{String(forgotErrors.confirmPassword.message)}</p>}
 
             <button
               type="submit"
               disabled={loading}
               className="w-full py-4 px-4 rounded-xl text-white font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              {loading ? <Loader2 className="animate-spin h-5 w-5 text-white mx-auto" /> : 'Send Reset Link'}
+              {loading ? <Loader2 className="animate-spin h-5 w-5 text-white mx-auto" /> : 'Update Password'}
             </button>
 
             <button

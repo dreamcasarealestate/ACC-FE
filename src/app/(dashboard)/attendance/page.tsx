@@ -7,6 +7,7 @@ import { format, isWithinInterval, startOfMonth, startOfWeek } from 'date-fns';
 import { CheckCircle2, XCircle, Clock, Plane, Trash2, Edit, Search } from 'lucide-react';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import { TablePagination } from '@/components/TablePagination';
+import { SectionLoader } from '@/components/SectionLoader';
 
 export default function AttendancePage() {
   const today = format(new Date(), 'yyyy-MM-dd');
@@ -22,7 +23,8 @@ export default function AttendancePage() {
   const [loading, setLoading] = useState(false);
   const [tableLoading, setTableLoading] = useState(false);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [recordSearch, setRecordSearch] = useState('');
+  const [recordStatusFilter, setRecordStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const [recordsPage, setRecordsPage] = useState(1);
 
@@ -113,7 +115,13 @@ export default function AttendancePage() {
     return isWithinInterval(d, { start: startOfMonth(new Date(date)), end: new Date(date) });
   }).length;
   const filteredLabours = (labours as any[]).filter((l: any) => l.fullName?.toLowerCase().includes(search.toLowerCase()));
-  const filteredRows = attendanceRows.filter((r: any) => !statusFilter || r.status === statusFilter);
+  const filteredRows = attendanceRows.filter((r: any) => {
+    const recordQuery = recordSearch.trim().toLowerCase();
+    const name = String(r.labour?.fullName || '').toLowerCase();
+    const matchesName = !recordQuery || name.includes(recordQuery);
+    const matchesStatus = !recordStatusFilter || r.status === recordStatusFilter;
+    return matchesName && matchesStatus;
+  });
   const pageSize = 10;
   const totalPages = Math.max(1, Math.ceil(filteredLabours.length / pageSize));
   const paginatedLabours = filteredLabours.slice((page - 1) * pageSize, page * pageSize);
@@ -129,7 +137,7 @@ export default function AttendancePage() {
   }, [search]);
   useEffect(() => {
     setRecordsPage(1);
-  }, [statusFilter, selectedLabourId, date]);
+  }, [recordSearch, recordStatusFilter, selectedLabourId, date]);
   const recordsPageSize = 10;
   const paginatedRows = filteredRows.slice((recordsPage - 1) * recordsPageSize, recordsPage * recordsPageSize);
 
@@ -161,7 +169,7 @@ export default function AttendancePage() {
             <option value="">All Labours</option>
             {labours.map((l: any) => <option key={l.id} value={l.id}>{l.fullName}</option>)}
           </select>
-          <button onClick={() => { setDate(today); setSelectedLabourId(''); setSearch(''); setStatusFilter(''); setOvertimeHours('0'); setRemarks(''); fetchAttendance(undefined, today); }} className="w-full sm:w-auto px-3 py-2 rounded-lg border border-slate-200 text-sm">Clear Filters</button>
+          <button onClick={() => { setDate(today); setSelectedLabourId(''); setSearch(''); setOvertimeHours('0'); setRemarks(''); fetchAttendance(undefined, today); }} className="w-full sm:w-auto px-3 py-2 rounded-lg border border-slate-200 text-sm">Clear Filters</button>
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -184,11 +192,7 @@ export default function AttendancePage() {
             <Search size={16} className="absolute left-3 top-3 text-slate-400" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search labour to mark attendance" className="w-full pl-9 pr-3 py-2.5 border rounded-lg" />
           </div>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full sm:w-auto px-3 py-2.5 border rounded-lg bg-white">
-            <option value="">All Record Status</option>
-            <option value="PRESENT">PRESENT</option><option value="ABSENT">ABSENT</option><option value="HALF_DAY">HALF_DAY</option><option value="OVERTIME">OVERTIME</option><option value="LEAVE">LEAVE</option>
-          </select>
-          <button onClick={() => { setSearch(''); setStatusFilter(''); }} className="w-full sm:w-auto px-3 py-2.5 border rounded-lg text-sm">Clear</button>
+          <button onClick={() => { setSearch(''); }} className="w-full sm:w-auto px-3 py-2.5 border rounded-lg text-sm">Clear</button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
@@ -295,7 +299,41 @@ export default function AttendancePage() {
         </div>
       )}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-slate-200 font-semibold text-slate-700">Attendance Records</div>
+        <div className="p-4 border-b border-slate-200">
+          <h3 className="font-semibold text-slate-700">Attendance Records</h3>
+          <div className="mt-3 flex flex-wrap gap-2 items-center">
+            <div className="relative flex-1 min-w-[220px]">
+              <Search size={16} className="absolute left-3 top-3 text-slate-400" />
+              <input
+                value={recordSearch}
+                onChange={(e) => setRecordSearch(e.target.value)}
+                placeholder="Search records by labour name"
+                className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-lg"
+              />
+            </div>
+            <select
+              value={recordStatusFilter}
+              onChange={(e) => setRecordStatusFilter(e.target.value)}
+              className="w-full sm:w-auto px-3 py-2.5 border border-slate-200 rounded-lg bg-white"
+            >
+              <option value="">All Status</option>
+              <option value="PRESENT">PRESENT</option>
+              <option value="ABSENT">ABSENT</option>
+              <option value="HALF_DAY">HALF_DAY</option>
+              <option value="OVERTIME">OVERTIME</option>
+              <option value="LEAVE">LEAVE</option>
+            </select>
+            <button
+              onClick={() => {
+                setRecordSearch('');
+                setRecordStatusFilter('');
+              }}
+              className="w-full sm:w-auto px-3 py-2.5 border border-slate-200 rounded-lg text-sm"
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-slate-500">
@@ -306,7 +344,7 @@ export default function AttendancePage() {
                 <th className="px-4 py-3 text-left">OT Hrs</th>
                 <th className="px-4 py-3 text-left">Marked By</th>
                 <th className="px-4 py-3 text-left">Remarks</th>
-                <th className="px-4 py-3 text-right">Action</th>
+                <th className="px-4 py-3 text-center">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -328,7 +366,7 @@ export default function AttendancePage() {
                   <td className="px-4 py-3">{row.overtimeHours}</td>
                   <td className="px-4 py-3">{getMarkedByName(row.markedBy)}</td>
                   <td className="px-4 py-3">{row.remarks || '-'}</td>
-                  <td className="px-4 py-3 text-right flex items-center gap-2">
+                  <td className="px-4 py-3 text-right flex items-center gap-2 justify-center">
                     <button onClick={() => setEditingRow(row)} className="inline-flex p-1.5 rounded-md hover:bg-blue-50 text-blue-500 mr-1">
                       <Edit size={16} />
                     </button>
@@ -339,7 +377,11 @@ export default function AttendancePage() {
                 </tr>
               ))}
               {tableLoading && (
-                <tr><td className="px-4 py-8 text-center text-slate-400" colSpan={7}>Loading attendance records...</td></tr>
+                <tr>
+                  <td className="px-4" colSpan={7}>
+                    <SectionLoader label="Loading attendance records..." />
+                  </td>
+                </tr>
               )}
               {!tableLoading && filteredRows.length === 0 && (
                 <tr>
@@ -387,14 +429,14 @@ function EditAttendanceModal({ row, onClose, onSave, labours }: { row: any; onCl
         <div className="w-full max-w-xl bg-white rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
         <div className="p-5 border-b flex justify-between"><h3 className="font-bold">Edit Attendance</h3><button onClick={onClose}>✕</button></div>
         <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div><label className="text-xs font-semibold text-slate-500">Labour</label><select value={form.labourId} onChange={(e) => setForm({ ...form, labourId: e.target.value })} className="w-full mt-1 p-2.5 border rounded-lg bg-white">{labours.map((l) => <option key={l.id} value={l.id}>{l.fullName}</option>)}</select></div>
+          <div><label className="text-xs font-semibold text-slate-500">Labour</label><select value={form.labourId} onChange={(e) => setForm({ ...form, labourId: e.target.value })} className="w-full mt-1 p-2.5 border rounded-lg bg-white"><option value="" disabled>Select labour</option>{labours.map((l) => <option key={l.id} value={l.id}>{l.fullName}</option>)}</select></div>
           <div><label className="text-xs font-semibold text-slate-500">Date</label><input type="date" max={today} value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="w-full mt-1 p-2.5 border rounded-lg" /></div>
-          <div><label className="text-xs font-semibold text-slate-500">Status</label><select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full mt-1 p-2.5 border rounded-lg bg-white"><option value="PRESENT">PRESENT</option><option value="ABSENT">ABSENT</option><option value="HALF_DAY">HALF_DAY</option><option value="OVERTIME">OVERTIME</option><option value="LEAVE">LEAVE</option></select></div>
-          <div><label className="text-xs font-semibold text-slate-500">Overtime Hours</label><input value={form.overtimeHours} onChange={(e) => setForm({ ...form, overtimeHours: e.target.value })} type="number" step="0.5" className="w-full mt-1 p-2.5 border rounded-lg" /></div>
-          <div className="md:col-span-2"><label className="text-xs font-semibold text-slate-500">Remarks</label><input value={form.remarks} onChange={(e) => setForm({ ...form, remarks: e.target.value })} placeholder="Remarks" className="w-full mt-1 p-2.5 border rounded-lg" /></div>
+          <div><label className="text-xs font-semibold text-slate-500">Status</label><select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full mt-1 p-2.5 border rounded-lg bg-white"><option value="" disabled>Select status</option><option value="PRESENT">PRESENT</option><option value="ABSENT">ABSENT</option><option value="HALF_DAY">HALF_DAY</option><option value="OVERTIME">OVERTIME</option><option value="LEAVE">LEAVE</option></select></div>
+          <div><label className="text-xs font-semibold text-slate-500">Overtime Hours</label><input value={form.overtimeHours} onChange={(e) => setForm({ ...form, overtimeHours: e.target.value })} type="number" step="0.5" placeholder="e.g. 1.5" className="w-full mt-1 p-2.5 border rounded-lg" /></div>
+          <div className="md:col-span-2"><label className="text-xs font-semibold text-slate-500">Remarks</label><input value={form.remarks} onChange={(e) => setForm({ ...form, remarks: e.target.value })} placeholder="Add remarks (optional)" className="w-full mt-1 p-2.5 border rounded-lg" /></div>
         </div>
         <div className="p-5 border-t flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 rounded-lg hover:bg-slate-100 text-slate-600">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2 rounded-lg font-semibold text-slate-700 border border-slate-300/90 bg-gradient-to-b from-white to-slate-50 hover:from-slate-50 hover:to-slate-100 shadow-sm hover:shadow-md transition-all">Cancel</button>
           <button onClick={() => onSave(form)} className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Save</button>
         </div>
       </div>
