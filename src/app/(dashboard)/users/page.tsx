@@ -27,6 +27,7 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState('');
   const [tablePage, setTablePage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { register, handleSubmit, reset, formState: { errors } } = useForm<UserForm>({
     defaultValues: { role: 'SUPERVISOR' },
@@ -50,6 +51,7 @@ export default function UsersPage() {
 
   const submitUser = async (data: UserForm) => {
     try {
+      setSubmitting(true);
       if (formMode === 'add') {
         await apiClient.post(apiClient.URLS.users, data);
         toast.success('User created');
@@ -72,6 +74,8 @@ export default function UsersPage() {
       await fetchUsers();
     } catch (e: any) {
       toast.error(e.body?.message || 'Failed to save user');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -299,8 +303,12 @@ export default function UsersPage() {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">
-                  {formMode === 'add' ? 'Create User' : 'Update User'}
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {submitting ? 'Saving...' : formMode === 'add' ? 'Create User' : 'Update User'}
                 </button>
               </div>
             </form>
