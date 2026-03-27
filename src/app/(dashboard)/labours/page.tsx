@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import apiClient from '@/lib/api';
 import toast from 'react-hot-toast';
-import { Plus, Edit, Trash2, Eye, Power, Search, RefreshCw } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Search, RefreshCw } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import { SectionLoader } from '@/components/SectionLoader';
@@ -17,7 +17,6 @@ type LabourForm = {
   wageType: string;
   wageAmount: number | string;
   joiningDate?: string;
-  status?: 'ACTIVE' | 'INACTIVE';
   notes?: string;
 };
 
@@ -31,14 +30,8 @@ type Labour = {
   wageType: string;
   wageAmount: number;
   joiningDate?: string;
-  status: 'ACTIVE' | 'INACTIVE';
   notes?: string;
 };
-
-const getStatusBadgeClass = (status: Labour['status']) =>
-  status === 'ACTIVE'
-    ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-    : 'bg-rose-50 text-rose-700 border-rose-100';
 
 const getWorkTypeBadgeClass = (workType: string) => {
   const key = (workType || '').trim().toLowerCase();
@@ -87,13 +80,12 @@ export default function LaboursPage() {
   const [selectedLabourForEdit, setSelectedLabourForEdit] = useState<Labour | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
   const [workTypeFilter, setWorkTypeFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { register, handleSubmit, reset } = useForm<LabourForm>({
-    defaultValues: { status: 'ACTIVE', wageType: 'DAILY', workType: 'Mason' },
+    defaultValues: { wageType: 'DAILY', workType: 'Mason' },
   });
 
   const fetchLabours = () => {
@@ -132,7 +124,7 @@ export default function LaboursPage() {
       setIsModalOpen(false);
       setFormMode('add');
       setSelectedLabourForEdit(null);
-      reset({ status: 'ACTIVE', wageType: 'DAILY', workType: 'Mason' });
+      reset({ wageType: 'DAILY', workType: 'Mason' });
       await fetchLabours();
     } catch (e: unknown) {
       console.error(e);
@@ -145,7 +137,7 @@ export default function LaboursPage() {
   const openCreate = () => {
     setFormMode('add');
     setSelectedLabourForEdit(null);
-    reset({ status: 'ACTIVE', wageType: 'DAILY', workType: 'Mason' });
+    reset({ wageType: 'DAILY', workType: 'Mason' });
     setIsModalOpen(true);
   };
 
@@ -168,18 +160,6 @@ export default function LaboursPage() {
     }
   };
 
-  const toggleStatus = async (labour: Labour) => {
-    try {
-      const nextStatus = labour.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-      await apiClient.patch(`${apiClient.URLS.labours}/${labour.id}/status`, { status: nextStatus });
-      toast.success(`Labour marked ${nextStatus}`);
-      fetchLabours();
-      if (selectedLabour?.id === labour.id) setSelectedLabour({ ...selectedLabour, status: nextStatus });
-    } catch (e: unknown) {
-      toast.error(getApiErrorMessage(e, 'Failed to update labour status'));
-    }
-  };
-
   const deleteLabour = async () => {
     if (!deleteId) return;
     try {
@@ -196,14 +176,12 @@ export default function LaboursPage() {
   const filteredLabours = labours.filter((l) => {
     const query = search.trim().toLowerCase();
     const matchesSearch = !query || l.fullName?.toLowerCase().includes(query) || l.phone?.toLowerCase().includes(query);
-    const matchesStatus = !statusFilter || l.status === statusFilter;
     const matchesWorkType = !workTypeFilter || l.workType === workTypeFilter;
-    return matchesSearch && matchesStatus && matchesWorkType;
+    return matchesSearch && matchesWorkType;
   });
 
   const clearFilters = () => {
     setSearch('');
-    setStatusFilter('');
     setWorkTypeFilter('');
   };
 
@@ -227,11 +205,6 @@ export default function LaboursPage() {
           <Search size={16} className="absolute left-3 top-3 text-slate-400" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name or phone" className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-lg" />
         </div>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2.5 border border-slate-200 rounded-lg bg-white">
-          <option value="">All Status</option>
-          <option value="ACTIVE">ACTIVE</option>
-          <option value="INACTIVE">INACTIVE</option>
-        </select>
         <select value={workTypeFilter} onChange={(e) => setWorkTypeFilter(e.target.value)} className="px-3 py-2.5 border border-slate-200 rounded-lg bg-white">
           <option value="">All Work Types</option>
           <option value="Mason">Mason</option><option value="Helper">Helper</option><option value="Carpenter">Carpenter</option><option value="Electrician">Electrician</option><option value="Plumber">Plumber</option><option value="Painter">Painter</option><option value="Plastering">Plastering</option><option value="Concrete Work">Concrete Work</option><option value="Shuttering">Shuttering</option><option value="Brick Mason">Brick Mason</option><option value="Steel worker">Steel worker</option><option value="Tile worker">Tile worker</option><option value="Other">Other</option>
@@ -249,7 +222,6 @@ export default function LaboursPage() {
                 <th className="px-6 py-4">Contact</th>
                 <th className="px-6 py-4">Work Type</th>
                 <th className="px-6 py-4">Wage</th>
-                <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4">Joined</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
@@ -274,19 +246,11 @@ export default function LaboursPage() {
                     <span className="font-semibold text-slate-700">₹{l.wageAmount}</span> 
                     <span className="text-xs text-slate-400">/{l.wageType.toLowerCase()}</span>
                   </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusBadgeClass(l.status)}`}>
-                      {l.status}
-                    </span>
-                  </td>
                   <td className="px-6 py-4 text-xs text-slate-500">{l.joiningDate || '-'}</td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end space-x-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                       <button onClick={() => viewLabour(l.id)} className="p-1.5 text-slate-400 hover:text-indigo-600 bg-white hover:bg-indigo-50 rounded-lg border border-transparent hover:border-indigo-100 transition-colors">
                         <Eye size={16} />
-                      </button>
-                      <button onClick={() => toggleStatus(l)} className="p-1.5 text-slate-400 hover:text-amber-600 bg-white hover:bg-amber-50 rounded-lg border border-transparent hover:border-amber-100 transition-colors">
-                        <Power size={16} />
                       </button>
                       <button onClick={() => openEdit(l)} className="p-1.5 text-slate-400 hover:text-blue-600 bg-white hover:bg-blue-50 rounded-lg border border-transparent hover:border-blue-100 transition-colors">
                         <Edit size={16} />
@@ -329,7 +293,7 @@ export default function LaboursPage() {
                   setIsModalOpen(false);
                   setFormMode('add');
                   setSelectedLabourForEdit(null);
-                  reset({ status: 'ACTIVE', wageType: 'DAILY', workType: 'Mason' });
+                  reset({ wageType: 'DAILY', workType: 'Mason' });
                 }}
                 className="text-slate-400 hover:text-slate-600 bg-white p-2 rounded-full shadow-sm border border-slate-100"
               >
@@ -387,14 +351,6 @@ export default function LaboursPage() {
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">Joining Date</label>
                   <input type="date" {...register('joiningDate')} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm" />
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Status</label>
-                  <select {...register('status')} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm bg-white">
-                    <option value="" disabled>Select status</option>
-                    <option value="ACTIVE">ACTIVE</option>
-                    <option value="INACTIVE">INACTIVE</option>
-                  </select>
-                </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">Address</label>
                   <textarea {...register('address')} rows={2} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm" placeholder="Address" />
@@ -412,7 +368,7 @@ export default function LaboursPage() {
                     setIsModalOpen(false);
                     setFormMode('add');
                     setSelectedLabourForEdit(null);
-                    reset({ status: 'ACTIVE', wageType: 'DAILY', workType: 'Mason' });
+                  reset({ wageType: 'DAILY', workType: 'Mason' });
                   }}
                   className="px-5 py-2.5 rounded-xl font-semibold text-slate-700 border border-slate-300/90 bg-gradient-to-b from-white to-slate-50 hover:from-slate-50 hover:to-slate-100 shadow-sm hover:shadow-md transition-all"
                 >
@@ -455,7 +411,6 @@ export default function LaboursPage() {
                 <div className="p-3 rounded-lg bg-slate-50"><p className="text-xs text-slate-500">Work Type</p><p className="font-semibold">{selectedLabour.workType || '-'}</p></div>
                 <div className="p-3 rounded-lg bg-slate-50"><p className="text-xs text-slate-500">Wage Type</p><p className="font-semibold">{selectedLabour.wageType || '-'}</p></div>
                 <div className="p-3 rounded-lg bg-slate-50"><p className="text-xs text-slate-500">Wage</p><p className="font-semibold">Rs. {selectedLabour.wageAmount || 0}</p></div>
-                <div className="p-3 rounded-lg bg-slate-50"><p className="text-xs text-slate-500">Status</p><p className="font-semibold">{selectedLabour.status || '-'}</p></div>
                 <div className="p-3 rounded-lg bg-slate-50"><p className="text-xs text-slate-500">Joining</p><p className="font-semibold">{selectedLabour.joiningDate || '-'}</p></div>
                 <div className="md:col-span-2 p-3 rounded-lg bg-slate-50"><p className="text-xs text-slate-500">Address</p><p className="font-semibold">{selectedLabour.address || '-'}</p></div>
                 <div className="md:col-span-2 p-3 rounded-lg bg-slate-50"><p className="text-xs text-slate-500">Notes</p><p className="font-semibold">{selectedLabour.notes || '-'}</p></div>
