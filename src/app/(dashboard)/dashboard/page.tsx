@@ -122,12 +122,12 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <StatCard title="Today Present Count" value={summary.todayPresent} icon={<UserCheck size={24} className="text-emerald-500"/>} />
-        <StatCard title="Today Absent Count" value={summary.todayAbsent} icon={<UserX size={24} className="text-rose-500"/>} />
-        <StatCard title="Total Active Labour" value={summary.totalActiveLabour} icon={<Users size={24} className="text-blue-500"/>} />
-        <StatCard title="Pending Settlements" value={summary.pendingSettlementsCount} icon={<Activity size={24} className="text-amber-500"/>} subtitle={`Outstanding ₹${summary.payableAmount || 0}`} />
-        <StatCard title="Weekly Payable Amount" value={`₹${summary.weeklyPayableAmount || 0}`} icon={<CalendarDays size={24} className="text-indigo-500"/>} />
-        <StatCard title="Monthly Payable Amount" value={`₹${summary.monthlyPayableAmount || 0}`} icon={<CalendarRange size={24} className="text-violet-500"/>} />
+        <StatCard title="Today Present Count" value={summary.todayPresent} icon={<UserCheck size={24} className="text-white"/>} cardClass="bg-emerald-600 border-emerald-500 text-white" />
+        <StatCard title="Today Absent Count" value={summary.todayAbsent} icon={<UserX size={24} className="text-white"/>} cardClass="bg-rose-600 border-rose-500 text-white" />
+        <StatCard title="Total Labour" value={summary.totalLabour} icon={<Users size={24} className="text-white"/>} cardClass="bg-blue-600 border-blue-500 text-white" />
+        <StatCard title="Pending Settlements" value={summary.pendingSettlementsCount} icon={<Activity size={24} className="text-white"/>} subtitle={`Outstanding ₹${summary.payableAmount || 0}`} cardClass="bg-amber-500 border-amber-400 text-white" />
+        <StatCard title="Weekly Payable Amount" value={`₹${summary.weeklyPayableAmount || 0}`} icon={<CalendarDays size={24} className="text-white"/>} cardClass="bg-indigo-600 border-indigo-500 text-white" />
+        <StatCard title="Monthly Payable Amount" value={`₹${summary.monthlyPayableAmount || 0}`} icon={<CalendarRange size={24} className="text-white"/>} cardClass="bg-violet-600 border-violet-500 text-white" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -190,18 +190,18 @@ export default function DashboardPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100/60 p-6">
           <h3 className="font-bold text-slate-800 mb-1">Top Wage Labours</h3>
           <p className="text-xs text-slate-500 mb-3">Showing up to 100 labours ranked by wage.</p>
-          <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
             {(analytics?.topWageLabours || []).map((l: any) => (
               <div key={l.id} className="flex items-center justify-between p-2.5 rounded-lg border border-slate-100 bg-slate-50/60">
                 <div>
                   <p className="font-semibold text-slate-800 text-sm">{l.fullName}</p>
-                  <p className="text-xs text-slate-500">{l.workType} • {l.status || '-'}</p>
+                      <p className="text-xs text-slate-500">{l.workType}</p>
                 </div>
                 <div className="font-bold text-blue-600">₹{l.wageAmount}</div>
               </div>
             ))}
             {(analytics?.topWageLabours || []).length === 0 && (
-              <div className="text-sm text-slate-500 py-6 text-center">No active labour records found.</div>
+                  <div className="text-sm text-slate-500 py-6 text-center">No labour records found.</div>
             )}
           </div>
         </div>
@@ -210,19 +210,19 @@ export default function DashboardPage() {
   );
 }
 
-function StatCard({ title, value, icon, subtitle, trend }: any) {
+function StatCard({ title, value, icon, subtitle, trend, cardClass = '' }: any) {
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100/60 flex flex-col justify-between hover:shadow-md hover:border-blue-100 transition-all group">
+    <div className={`p-6 rounded-2xl shadow-sm border flex flex-col justify-between hover:shadow-md transition-all group ${cardClass || 'bg-white border-slate-100/60'}`}>
       <div className="flex justify-between items-start">
         <div>
-          <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider">{title}</p>
-          <h3 className="text-4xl font-extrabold text-slate-800 mt-3 group-hover:text-blue-600 transition-colors">{value}</h3>
-          {subtitle && <p className="text-sm text-slate-400 mt-1 font-medium">{subtitle}</p>}
+          <p className="text-sm font-semibold uppercase tracking-wider text-white/85">{title}</p>
+          <h3 className="text-4xl font-extrabold text-white mt-3">{value}</h3>
+          {subtitle && <p className="text-sm text-white/90 mt-1 font-medium">{subtitle}</p>}
         </div>
-        <div className="p-3 bg-slate-50 rounded-xl group-hover:scale-110 transition-transform">{icon}</div>
+        <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm group-hover:scale-110 transition-transform">{icon}</div>
       </div>
       {trend && (
-        <div className="mt-5 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-100/50 inline-flex items-center px-2.5 py-1 rounded-md self-start">
+        <div className="mt-5 text-xs font-semibold text-white bg-white/20 border border-white/30 inline-flex items-center px-2.5 py-1 rounded-md self-start">
           {trend}
         </div>
       )}

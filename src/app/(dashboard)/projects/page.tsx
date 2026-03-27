@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { Plus, Edit, Trash2, Search, Building2, Users2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Building2, Users2, Layers, Eye } from 'lucide-react';
 import apiClient from '@/lib/api';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import { TablePagination } from '@/components/TablePagination';
@@ -151,11 +151,23 @@ export default function ProjectsPage() {
       p.projectName?.toLowerCase().includes(q) ||
       p.town?.toLowerCase().includes(q) ||
       p.siteAddress?.toLowerCase().includes(q);
-    const matchesTown = !townFilter || p.town === townFilter;
+    const townKey = String(p.town || '').trim().toLowerCase();
+    const matchesTown = !townFilter || townKey === townFilter;
     return matchesSearch && matchesTown;
   });
 
-  const towns = Array.from(new Set(projects.map((p) => p.town).filter(Boolean)));
+  const townOptions = Array.from(
+    projects.reduce((acc: Map<string, string>, p: any) => {
+      const rawTown = String(p.town || '').trim();
+      if (!rawTown) return acc;
+      const key = rawTown.toLowerCase();
+      if (!acc.has(key)) {
+        const label = rawTown.charAt(0).toUpperCase() + rawTown.slice(1).toLowerCase();
+        acc.set(key, label);
+      }
+      return acc;
+    }, new Map<string, string>()),
+  ).map(([value, label]) => ({ value, label }));
   const tablePageSize = 10;
   const paginatedProjects = filteredProjects.slice((tablePage - 1) * tablePageSize, tablePage * tablePageSize);
 
@@ -191,8 +203,8 @@ export default function ProjectsPage() {
         </div>
         <select value={townFilter} onChange={(e) => setTownFilter(e.target.value)} className="w-full md:w-auto px-3 py-2.5 border border-slate-200 rounded-lg bg-white">
           <option value="">All Towns</option>
-          {towns.map((town) => (
-            <option key={town} value={town}>{town}</option>
+          {townOptions.map((town) => (
+            <option key={town.value} value={town.value}>{town.label}</option>
           ))}
         </select>
         <button onClick={() => { setSearch(''); setTownFilter(''); }} className="w-full md:w-auto px-3 py-2.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-sm">Clear Filters</button>
@@ -399,23 +411,68 @@ function ProjectModal({ title, register, errors, labours, onSubmit, onClose, sub
 function ProjectLaboursModal({ projectName, labours, onClose }: { projectName: string; labours: any[]; onClose: () => void }) {
   const [search, setSearch] = useState('');
   const [workTypeFilter, setWorkTypeFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [wageTypeFilter, setWageTypeFilter] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 10;
+  const getWorkTypeBadgeClass = (workType: string) => {
+    const key = (workType || '').trim().toLowerCase();
+    switch (key) {
+      case 'mason':
+        return 'bg-amber-50 text-amber-700 border-amber-100';
+      case 'helper':
+        return 'bg-sky-50 text-sky-700 border-sky-100';
+      case 'carpenter':
+        return 'bg-orange-50 text-orange-700 border-orange-100';
+      case 'electrician':
+        return 'bg-yellow-50 text-yellow-700 border-yellow-100';
+      case 'plumber':
+        return 'bg-cyan-50 text-cyan-700 border-cyan-100';
+      case 'painter':
+        return 'bg-pink-50 text-pink-700 border-pink-100';
+      case 'plastering':
+        return 'bg-emerald-50 text-emerald-700 border-emerald-100';
+      case 'concrete work':
+        return 'bg-stone-100 text-stone-700 border-stone-200';
+      case 'shuttering':
+        return 'bg-lime-50 text-lime-700 border-lime-100';
+      case 'brick mason':
+        return 'bg-red-50 text-red-700 border-red-100';
+      case 'steel worker':
+        return 'bg-slate-100 text-slate-700 border-slate-200';
+      case 'tile worker':
+        return 'bg-violet-50 text-violet-700 border-violet-100';
+      default:
+        return 'bg-indigo-50 text-indigo-700 border-indigo-100';
+    }
+  };
+  const getWageTypeBadgeClass = (wageType: string) => {
+    const key = (wageType || '').trim().toUpperCase();
+    switch (key) {
+      case 'DAILY':
+        return 'bg-emerald-50 text-emerald-700 border-emerald-100';
+      case 'WEEKLY':
+        return 'bg-blue-50 text-blue-700 border-blue-100';
+      case 'MONTHLY':
+        return 'bg-violet-50 text-violet-700 border-violet-100';
+      default:
+        return 'bg-slate-100 text-slate-700 border-slate-200';
+    }
+  };
 
   const filteredLabours = (labours || []).filter((l) => {
     const q = search.trim().toLowerCase();
     const searchMatch = !q || l.fullName?.toLowerCase().includes(q) || l.phone?.toLowerCase().includes(q);
     const typeMatch = !workTypeFilter || l.workType === workTypeFilter;
-    const statusMatch = !statusFilter || l.status === statusFilter;
-    return searchMatch && typeMatch && statusMatch;
+    const wageTypeMatch = !wageTypeFilter || l.wageType === wageTypeFilter;
+    return searchMatch && typeMatch && wageTypeMatch;
   });
   const paginatedLabours = filteredLabours.slice((page - 1) * pageSize, page * pageSize);
   const workTypes = Array.from(new Set((labours || []).map((l) => l.workType).filter(Boolean)));
+  const wageTypes = Array.from(new Set((labours || []).map((l) => l.wageType).filter(Boolean)));
 
   useEffect(() => {
     setPage(1);
-  }, [search, workTypeFilter, statusFilter]);
+  }, [search, workTypeFilter, wageTypeFilter]);
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -439,20 +496,35 @@ function ProjectLaboursModal({ projectName, labours, onClose }: { projectName: s
         </div>
         <div className="p-5 space-y-4 overflow-y-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="rounded-xl border border-slate-200 bg-white p-3">
-              <p className="text-xs text-slate-500">Total Labours</p>
-              <p className="text-xl font-bold text-slate-900">{labours.length}</p>
+            <div className="rounded-2xl p-4 bg-indigo-600 text-white flex items-center justify-between">
+              <div>
+                <p className="text-xs/5 opacity-90">Total Labours</p>
+                <p className="text-2xl font-extrabold mt-1">{labours.length}</p>
+              </div>
+              <div className="p-3 rounded-xl bg-white/15">
+                <Users2 size={22} className="text-white" />
+              </div>
             </div>
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-              <p className="text-xs text-emerald-700">Active</p>
-              <p className="text-xl font-bold text-emerald-800">{labours.filter((l) => l.status === 'ACTIVE').length}</p>
+            <div className="rounded-2xl p-4 bg-emerald-600 text-white flex items-center justify-between">
+              <div>
+                <p className="text-xs/5 opacity-90">Work Types</p>
+                <p className="text-2xl font-extrabold mt-1">{workTypes.length}</p>
+              </div>
+              <div className="p-3 rounded-xl bg-white/15">
+                <Layers size={22} className="text-white" />
+              </div>
             </div>
-            <div className="rounded-xl border border-rose-200 bg-rose-50 p-3">
-              <p className="text-xs text-rose-700">Inactive</p>
-              <p className="text-xl font-bold text-rose-800">{labours.filter((l) => l.status === 'INACTIVE').length}</p>
+            <div className="rounded-2xl p-4 bg-slate-800 text-white flex items-center justify-between">
+              <div>
+                <p className="text-xs/5 opacity-90">Visible</p>
+                <p className="text-2xl font-extrabold mt-1">{filteredLabours.length}</p>
+              </div>
+              <div className="p-3 rounded-xl bg-white/15">
+                <Eye size={22} className="text-white" />
+              </div>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-2 max-w-full">
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -463,10 +535,9 @@ function ProjectLaboursModal({ projectName, labours, onClose }: { projectName: s
               <option value="">All Work Types</option>
               {workTypes.map((wt) => <option key={wt} value={wt}>{wt}</option>)}
             </select>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="p-2.5 border rounded-lg bg-white">
-              <option value="">All Status</option>
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="INACTIVE">INACTIVE</option>
+            <select value={wageTypeFilter} onChange={(e) => setWageTypeFilter(e.target.value)} className="p-2.5 border rounded-lg bg-white">
+              <option value="">All Wage Types</option>
+              {wageTypes.map((wt) => <option key={wt} value={wt}>{wt}</option>)}
             </select>
           </div>
           <div className="border rounded-xl overflow-hidden">
@@ -477,7 +548,7 @@ function ProjectLaboursModal({ projectName, labours, onClose }: { projectName: s
                   <th className="px-4 py-2 text-left">Name</th>
                   <th className="px-4 py-2 text-left">Phone</th>
                   <th className="px-4 py-2 text-left">Work Type</th>
-                  <th className="px-4 py-2 text-left">Status</th>
+                  <th className="px-4 py-2 text-left">Wage Type</th>
                 </tr>
               </thead>
               <tbody>
@@ -486,13 +557,13 @@ function ProjectLaboursModal({ projectName, labours, onClose }: { projectName: s
                     <td className="px-4 py-2 font-medium text-slate-800">{l.fullName}</td>
                     <td className="px-4 py-2 text-slate-600">{l.phone}</td>
                     <td className="px-4 py-2">
-                      <span className="px-2 py-0.5 text-xs rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+                      <span className={`px-2 py-0.5 text-xs rounded-full border ${getWorkTypeBadgeClass(l.workType)}`}>
                         {l.workType}
                       </span>
                     </td>
                     <td className="px-4 py-2">
-                      <span className={`px-2 py-0.5 text-xs rounded-full border ${l.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}>
-                        {l.status}
+                      <span className={`px-2 py-0.5 text-xs rounded-full border ${getWageTypeBadgeClass(l.wageType)}`}>
+                        {l.wageType}
                       </span>
                     </td>
                   </tr>
